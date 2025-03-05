@@ -1,7 +1,7 @@
-d#ifndef __POLYNOM_H__
+#ifndef __POLYNOM_H__
 #define __POLYNOM_H__
 
-#include "polynom.h"
+#include "list.h"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -15,521 +15,274 @@ enum class State {
 	Q3,
 	Q4,
 	Q5,
-	Unary,
+	Q6,
+	Q7,
+	Q8,
+	Q9,
+	X,
+	Y,
+	Z,
 	ERROR
 };
 
-class Term {
-
+class Monom {
+	double coef;
+	double power;
 public:
-	virtual ~Term() {}
-	virtual string GetType() {
-		return "Term";
-	}
-};
 
-class Operand : public Term {
-
-public:
-	string GetType() {
-		return "Operand";
-	}
-};
-
-class Number : public Operand {
-
-public:
-	string GetType() {
-		return "Number";
+	Monom() {
+		coef = 0;
+		power = 0;
 	}
 
-	virtual double GetValue() {
-		return 0;
-	}
-};
-
-class Integer : public Number {
-	double value;
-public:
-	string GetType() {
-		return "Integer";
+	Monom(double coef1, double power1) {
+		this->coef = coef1;
+		this->power = power1;
 	}
 
-	double GetValue() {
-		return this->value;
-	}
-};
-
-class Floating : public Number {
-	double value;
-public:
-	string GetType() {
-		return "Floating";
+	double getCoef() {
+		return coef;
 	}
 
-	double GetValue() {
-		return this->value;
+	double getPower() {
+		return power;
 	}
-
-	Floating() {
-		this->value = 0;
-	}
-
-	Floating(double number) {
-		this->value = number;
-	}
-};
-
-class Operators : public Term {
-
-public:
-	string GetType() {
-		return "Operators";
-	}
-	virtual int GetPriority() {
-		return 0;
-	}
-};
-
-class Add : public Operators {
-	int priority = 1;
-public:
-	Add() {}
-
-	string GetType() {
-		return "Add";
-	}
-	int GetPriority() {
-		return this->priority;
-	}
-};
-
-class Sub : public Operators {
-	int priority = 1;
-public:
-	string GetType() {
-		return "Sub";
-	}
-	int GetPriority() {
-		return this->priority;
-	}
-};
-
-class Mul : public Operators {
-	int priority = 2;
-public:
-	Mul() {}
-
-	string GetType() {
-		return "Mul";
-	}
-	int GetPriority() {
-		return this->priority;
-	}
-};
-
-class Div : public Operators {
-	int priority = 2;
-public:
-	Div() {}
-
-	string GetType() {
-		return "Div";
-	}
-	int GetPriority() {
-		return this->priority;
-	}
-};
-
-class Brackets : public Term {
-
-public:
-	string GetType() {
-		return "Brackets";
-	}
-};
-
-class OpeningBracket : public Brackets {
 	
-public:
-	OpeningBracket() {}
-
-	string GetType() {
-		return "OpeningBracket";
-	}
 };
 
-class ClosingBracket : public Brackets {
+class Polynom {
+
+	List<Monom> polynom;
 
 public:
-	ClosingBracket() {}
 
-	string GetType() {
-		return "ClosingBracket";
-	}
-};
-
-
-class Translator {
-	string infix;
-	vector<Term*> postfix;
-	vector<Term*> lexems;
-
-public:
-	Translator(string infix_string) {
-		infix_string.erase(remove_if(infix_string.begin(), infix_string.end(), isspace), infix_string.end());
-		this->infix = infix_string;
-	}
-
-	double getAnswer() {
-		if (StringAnalyze() == true) {
-			ToPostFix();
-			double answer;
-			answer = Calculate();
-			return answer;
-		}
-		else {
-			throw "Incorrect expression";
+	Polynom(string str) {
+		bool isCorrect = stringAnalyze(str);
+		if (!isCorrect) {
+			throw "incorrect string";
 		}
 	}
 
-	void everything() {
-		if (StringAnalyze() == true) {
-			ToPostFix();
-			double answer;
-			answer = Calculate();
-			cout << "and the answer is: " << answer << endl;
-		}
-		else {
-			cout << "String analyze spotted incorrect expression" << endl;
-		}
-	}
-
-	bool StringAnalyze() {
-		if (infix.size() == 0) {
+	bool stringAnalyze(string givenStr) {
+		if (givenStr.size() == 0) {
 			throw "empty string";
 		}
 
 		State ka = State::S0;
-		string strNum = "";
-		int k = 0;
+		string strCoef;
+		string strDeg;
 
-		for (int i = 0; i < infix.size(); i++) {
+		for (int i = 0; i < givenStr.size(); i++) {
 
 			switch (ka) {
 
-			case State::S0: if (infix[i] >= '0' && infix[i] <= '9') {
-				ka = State::Q1;
-				strNum = "";
-				strNum += infix[i];
-				if (i == infix.size() - 1) {
-					double number = stod(strNum);
-					lexems.push_back(new Floating(number));
-					strNum = "";
-				}
-			}
-						  else if (infix[i] == '(') {
-				ka = State::Q3;
-				k += 1;
-				if (k < 0) {
-					ka = State::ERROR;
-					break;
-				}
-				lexems.push_back(new OpeningBracket());
-			}
-						  else if (infix[i] == '-') {
-				ka = State::Unary;
-				lexems.push_back(new Floating(0));
-				lexems.push_back(new Sub());
-			}
-						  else {
-				ka = State::ERROR;
-			}
-						  break;
-
-			case State::Q1: if (infix[i] >= '0' && infix[i] <= '9') {
-				ka = State::Q1;
-				strNum += infix[i];
-				if (i == infix.size() - 1) {
-					double number = stod(strNum);
-					lexems.push_back(new Floating(number));
-					strNum = "";
-				}
-			}
-						  else if (infix[i] == '.') {
-				ka = State::Q2;
-				strNum += infix[i];
-				if (i == infix.size() - 1) {
-					double number = stod(strNum);
-					lexems.push_back(new Floating(number));
-					strNum = "";
-				}
-			}
-						  else if (infix[i] == '+' || infix[i] == '-' || infix[i] == '*' || infix[i] == '/') {
-				ka = State::Q4;
-				double number = stod(strNum);
-				lexems.push_back(new Floating(number));
-				strNum = "";
-				switch (infix[i]) {
-				case ('+'): lexems.push_back(new Add());
-					break;
-				case ('-'): lexems.push_back(new Sub());
-					break;
-				case ('*'): lexems.push_back(new Mul());
-					break;
-				case ('/'): lexems.push_back(new Div());
-					break;
-				}
-			}
-						  else if (infix[i] == ')') {
-				ka = State::Q5;
-				k -= 1;
-				if (k < 0) {
-					ka = State::ERROR;
-					break;
-				}
-				double number = stod(strNum);
-				lexems.push_back(new Floating(number));
-				strNum = "";
-				lexems.push_back(new ClosingBracket());
-			}
-						  else {
-				ka = State::ERROR;
-			}
-						  break;
-
-			case State::Q2: if (infix[i] >= '0' && infix[i] <= '9') {
-				ka = State::Q2;
-				strNum += infix[i];
-				if (i == infix.size() - 1) {
-					double number = stod(strNum);
-					lexems.push_back(new Floating(number));
-					strNum = "";
-				}
-			}
-						  else if (infix[i] == '+' || infix[i] == '-' || infix[i] == '*' || infix[i] == '/') {
-				ka = State::Q4;
-				double number = stod(strNum);
-				lexems.push_back(new Floating(number));
-				strNum = "";
-				switch (infix[i]) {
-				case ('+'): lexems.push_back(new Add());
-					break;
-				case ('-'): lexems.push_back(new Sub());
-					break;
-				case ('*'): lexems.push_back(new Mul());
-					break;
-				case ('/'): lexems.push_back(new Div());
-					break;
-				}
-			}
-						  else if (infix[i] == ')') {
-				ka = State::Q5;
-				k -= 1;
-				if (k < 0) {
-					ka = State::ERROR;
-					break;
-				}
-				double number = stod(strNum);
-				lexems.push_back(new Floating(number));
-				strNum = "";
-				lexems.push_back(new ClosingBracket());
-			}
-						  else {
-				ka = State::ERROR;
-			}
-						  break;
-
-			case State::Q3: if (infix[i] >= '0' && infix[i] <= '9') {
-				ka = State::Q1;
-				strNum += infix[i];
-				if (i == infix.size() - 1) {
-					double number = stod(strNum);
-					lexems.push_back(new Floating(number));
-					strNum = "";
-				}
-			}
-						  else if (infix[i] == '(') {
-				ka = State::Q3;
-				k += 1;
-				if (k < 0) {
-					ka = State::ERROR;
-					break;
-				}
-				lexems.push_back(new OpeningBracket());
-			}
-						  else if (infix[i] == '-') {
-				ka = State::Unary;
-				lexems.push_back(new Floating(0));
-				lexems.push_back(new Sub());
-			}
-						  else {
-				ka = State::ERROR;
-			}
-				break;
-			case State::Q4: if (infix[i] >= '0' && infix[i] <= '9') {
-				ka = State::Q1;
-				strNum = "";
-				strNum += infix[i];
-				if (i == infix.size() - 1) {
-					double number = stod(strNum);
-					lexems.push_back(new Floating(number));
-					strNum = "";
-				}
-			}
-						  else if (infix[i] == '(') {
-				ka = State::Q3;
-				k += 1;
-				if (k < 0) {
-					ka = State::ERROR;
-					break;
-				}
-				lexems.push_back(new OpeningBracket());
-			}
-						  else {
-				ka = State::ERROR;
-			}
-						  break;
-			case State::Q5: if (infix[i] == ')') {
-				ka = State::Q5;
-				k -= 1;
-				if (k < 0) {
-					ka = State::ERROR;
-					break;
-				}
-				lexems.push_back(new ClosingBracket());
-			}
-						  else if (infix[i] == '+' || infix[i] == '-' || infix[i] == '*' || infix[i] == '/') {
-				ka = State::Q4;
-				switch (infix[i]) {
-				case ('+'): lexems.push_back(new Add());
-					break;
-				case ('-'): lexems.push_back(new Sub());
-					break;
-				case ('*'): lexems.push_back(new Mul());
-					break;
-				case ('/'): lexems.push_back(new Div());
-					break;
-				}
-			}
-						  else {
-				ka = State::ERROR;
-			}
-				break;
-
-			case State::Unary: 
-				if (infix[i] >= '0' && infix[i] <= '9') {
-					ka = State::Q1;
-					strNum += infix[i];
-					if (i == infix.size() - 1) {
-						double number = stod(strNum);
-						lexems.push_back(new Floating(number));
-						strNum = "";
+				case State::S0:
+					if (givenStr[i] == '+' || givenStr[i] == '-') {
+						ka = State::Q1;
+						strCoef = "";
+						strDeg = "";
+						strCoef += givenStr[i];
 					}
-				}
-				else {
-					ka = State::ERROR;
-				}
-				break;
-			case State::ERROR: break;
-			default: ka = State::ERROR;
-				break;
-			}
-		}//for
-		return ((ka == State::Q1 || ka == State::Q2 || ka == State::Q5) && (k==0));
-	}
+					else if (givenStr[i] >= '0' && givenStr[i] <= '9') {
+						ka = State::Q2;
+						strCoef += givenStr[i];
+					}
+					else if (givenStr[i] == 'x' || givenStr[i] == 'X') {
+						ka = State::X;
+						strCoef = '1';
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
 
-	void ToPostFix() {
-		Stack<Term*, vector> st;
-		Term* stackItem;
-		for (int i = 0; i < lexems.size(); i++) {
-			if (lexems[i]->GetType() == "OpeningBracket") {
-				st.push(lexems[i]);
-			}
-			else if (lexems[i]->GetType() == "ClosingBracket") {
-				stackItem = st.top();
-				st.pop();
-				while (stackItem->GetType() != "OpeningBracket") {
-					postfix.push_back(stackItem);
-					stackItem = st.top();
-					st.pop();
-				}
-			}
-			else if (lexems[i]->GetType() == "Add" || lexems[i]->GetType() == "Sub" || \
-				lexems[i]->GetType() == "Mul" || lexems[i]->GetType() == "Div") {
-				if (st.empty() || st.top()->GetType() == "OpeningBracket") {
-					st.push(lexems[i]);
-				}
-				else {
-					while (!st.empty() && st.top()->GetType() != "OpeningBracket") {
-						Operators* op1 = dynamic_cast<Operators*>(lexems[i]);
-						Operators* op2 = dynamic_cast<Operators*>(st.top());
-						if (op2 && op2->GetPriority() >= op1->GetPriority()) {
-							postfix.push_back(st.top());
-							st.pop();
+				case State::Q1:
+					if (givenStr[i] >= '0' && givenStr[i] <= '9') {
+						ka = State::Q2;
+						strCoef += givenStr[i];
+					}
+					else if (givenStr[i] == 'x' || givenStr[i] == 'X') {
+						ka = State::X;
+						strCoef += '1';
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::Q2:
+					if (givenStr[i] >= '0' && givenStr[i] <= '9') {
+						ka = State::Q2;
+						strCoef += givenStr[i];
+					}
+					else if (givenStr[i] == '.') {
+						ka = State::Q3;
+						strCoef += givenStr[i];
+					}
+					else if (givenStr[i] == 'x' || givenStr[i] == 'X') {
+						ka = State::X;
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::Q3:
+					if (givenStr[i] >= '0' && givenStr[i] <= '9') {
+						ka = State::Q3;
+						strCoef += givenStr[i];
+					}
+					else if (givenStr[i] == 'x' || givenStr[i] == 'X') {
+						ka = State::X;
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::X:
+					if (givenStr[i] == '^') {
+						ka = State::Q4;
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::Q4:
+					if (givenStr[i] >= '0' && givenStr[i] <= '9') {
+						ka = State::Q5;
+						strDeg += givenStr[i];
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::Q5:
+					if (givenStr[i] == 'y' || givenStr[i] == 'Y') {
+						ka = State::Y;
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::Y:
+					if (givenStr[i] == '^') {
+						ka = State::Q6;
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::Q6:
+					if (givenStr[i] >= '0' && givenStr[i] <= '9') {
+						ka = State::Q7;
+						strDeg += givenStr[i];
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::Q7:
+					if (givenStr[i] == 'z' || givenStr[i] == 'Z') {
+						ka = State::Z;
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::Z:
+					if (givenStr[i] == '^') {
+						ka = State::Q8;
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::Q8:
+					if (givenStr[i] >= '0' && givenStr[i] <= '9') {
+						ka = State::Q9;
+						strDeg += givenStr[i];
+
+						List<Monom>::iterator it = polynom.begin();
+						if (polynom.begin() == polynom.end()) {
+							polynom.insert_front(Monom(stod(strCoef), stod(strDeg)));
 						}
 						else {
-							break;
+							for (List<Monom>::iterator it = polynom.begin(); it != polynom.end(); ++it) {
+								if ((stod(strDeg)) > (it->getPower())) {
+									polynom.insert(Monom(stod(strCoef), stod(strDeg)), it);
+									break;
+								}
+								/*else if((it++) == polynom.end()) {
+									polynom.insert(Monom(stod(strCoef), stod(strDeg)), it);
+									break;
+								}*/
+								else if(((it++)++) == polynom.end()) {
+									polynom.insert(Monom(stod(strCoef), stod(strDeg)), it);
+									break;
+								}
+							}
 						}
+						
+						//polynom.insert_front(Monom(stod(strCoef), stod(strDeg)));
 					}
-					st.push(lexems[i]);
-				}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+
+				case State::Q9:
+					if (givenStr[i] == '+' || givenStr[i] == '-') {
+						ka = State::Q1;
+						strCoef = "";
+						strDeg = "";
+						strCoef += givenStr[i];
+					}
+					else {
+						ka = State::ERROR;
+					}
+					break;
+				
+				case State::ERROR:
+					break;
+
+				default: ka = State::ERROR;
+					break;
 			}
-			else {
-				postfix.push_back(lexems[i]);
-			}
+
 		}//for
-		while (!st.empty()) {
-			stackItem = st.top();
-			st.pop();
-			postfix.push_back(stackItem);
-		}
+		return (ka == State::Q9);
 	}
 
-	double Calculate() {
-		Stack<double, vector> st;
-		double leftOperand, rightOperand;
-		for (int i = 0; i < postfix.size(); i++) {
-			if (postfix[i]->GetType() == "Add") {
-				rightOperand = st.top();
-				st.pop();
-				leftOperand = st.top();
-				st.pop();
-				st.push(leftOperand + rightOperand);
+	Polynom operator+(Polynom other) {
+		List<Monom> result;
+		List<Monom>::iterator it1 = polynom.begin();
+		List<Monom>::iterator it2 = other.polynom.begin();
+		while ((it1 != polynom.end()) && (it2 != other.polynom.end())) {
+			if (it1->getPower() == it2->getPower()) {
+				double resCoef = it1->getCoef() + it2->getCoef();
+				result.insert_front(Monom(resCoef, it1->getPower()));
+				it1++;
+				it2++;
 			}
-			else if (postfix[i]->GetType() == "Sub") {
-				rightOperand = st.top();
-				st.pop();
-				leftOperand = st.top();
-				st.pop();
-				st.push(leftOperand - rightOperand);
-			}
-			else if (postfix[i]->GetType() == "Mul") {
-				rightOperand = st.top();
-				st.pop();
-				leftOperand = st.top();
-				st.pop();
-				st.push(leftOperand * rightOperand);
-			}
-			else if (postfix[i]->GetType() == "Div") {
-				rightOperand = st.top();
-				st.pop();
-				leftOperand = st.top();
-				st.pop();
-				if (rightOperand == 0) {
-					throw "cant divide by 0";
-				}
-				st.push(leftOperand / rightOperand);
+			else if (it1->getPower() < it2->getPower()) {
+				result.insert_front(Monom(it1->getCoef(), it1->getPower()));
+				it1++;
 			}
 			else {
-				Number* thing = dynamic_cast<Number*>(postfix[i]);
-				double number = thing->GetValue();
-				st.push(number);
+				result.insert_front(Monom(it2->getCoef(), it2->getPower()));
+				it2++;
 			}
 		}
-		return st.top();
+		return result;
 	}
 };
-
 
 #endif

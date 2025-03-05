@@ -13,7 +13,7 @@ class List {
 		Node* next;
 
 		Node() {
-			data = 0;
+			data = T();
 			next = nullptr;
 		}
 
@@ -29,12 +29,20 @@ public:
 
 	class iterator {
 	protected:
+
 		Node* current;
+
 	public:
+
 		explicit iterator(Node* Node) : current(Node) {}
+
 		iterator& operator++() {
 			current = current->next;
 			return *this;
+		}
+
+		Node* getNode() const {
+			return current;
 		}
 
 		iterator operator++(int) {
@@ -77,6 +85,17 @@ public:
 		temp->data = value;
 		prev->next = temp;
 		return temp;
+	}
+
+	iterator insert(T value, iterator pos) {
+		// If pos is at the beginning, handle separately (e.g., update first pointer)
+		// Otherwise, extract the underlying Node* from pos:
+		Node* prev = pos.getNode();
+		Node* temp = new Node;
+		temp->data = value;
+		temp->next = prev->next;
+		prev->next = temp;
+		return iterator(temp);
 	}
 
 	Node* insert_front(T value) {
