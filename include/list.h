@@ -87,16 +87,26 @@ public:
 		return temp;
 	}
 
-	iterator insert(T value, iterator pos) {
-		// If pos is at the beginning, handle separately (e.g., update first pointer)
-		// Otherwise, extract the underlying Node* from pos:
-		Node* prev = pos.getNode();
+	/*iterator insert(T value, iterator prev) {
 		Node* temp = new Node;
-		temp->data = value;
 		temp->next = prev->next;
+		temp->data = value;
 		prev->next = temp;
 		return iterator(temp);
-	}
+	}*/
+
+	//iterator insert(T value, iterator pos) {
+	//	Node* prev = pos.getNode();
+	//	if (prev == nullptr) {
+	//		insert_front(value);
+	//		return begin();
+	//	}
+	//	Node* temp = new Node;
+	//	temp->data = value;
+	//	temp->next = prev->next;
+	//	prev->next = temp;
+	//	return iterator(temp);
+	//}
 
 	Node* insert_front(T value) {
 		Node* temp = new Node;
