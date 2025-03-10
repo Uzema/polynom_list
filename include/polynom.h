@@ -49,6 +49,18 @@ public:
 		return power;
 	}
 	
+	Monom operator+(Monom m) {
+		if (this->getPower() != m.getPower()) {
+			throw "different degrees";
+		}
+		return Monom(this->coef + m.coef, power);
+	}
+
+	Monom& operator+=(const Monom& m) {
+		if (power != m.power) throw std::exception("Degree are different");
+		coef += m.coef;
+		return *this;
+	}
 };
 
 class Polynom {
@@ -57,12 +69,41 @@ class Polynom {
 
 public:
 
-	Polynom() { }
+	Polynom() {
+		List<Monom> polynom;
+	}
 
 	Polynom(string str) {
 		bool isCorrect = stringAnalyze(str);
 		if (!isCorrect) {
 			throw "incorrect string";
+		}
+	}
+
+	Polynom(Monom m) {
+		polynom.insert_front(m);
+	}
+
+	void insert(double newCoef, int newDeg) {
+		Monom m(newCoef, newDeg);
+		List<Monom>::iterator it = polynom.begin();
+
+		if (polynom.begin() == polynom.end() || newDeg < it->getPower()) {
+			polynom.insert_front(Monom(newCoef, newDeg));
+		}
+		else if (newDeg == it->getPower()) {
+			*it = *it + m;
+			return;
+		}
+		else {
+			List<Monom>::iterator prev(nullptr);
+			while (it != polynom.end() && newDeg > it->getPower()) {
+				prev = it;
+				++it;
+			}
+			if (prev != List<Monom>::iterator(nullptr)) {
+				polynom.insert(Monom(newCoef, newDeg), prev.getNode());
+			}
 		}
 	}
 
@@ -218,27 +259,28 @@ public:
 						strDeg += givenStr[i];
 
 						List<Monom>::iterator it = polynom.begin();
-						if (polynom.begin() == polynom.end()) {
-							polynom.insert_front(Monom(stod(strCoef), stod(strDeg)));
+						double newDeg = stod(strDeg);
+						double newCoef = stod(strCoef);
+						Monom m(newCoef, newDeg);
+
+						if (polynom.begin() == polynom.end() || newDeg < it->getPower()) {
+							polynom.insert_front(Monom(newCoef, newDeg));
+						}
+						else if (newDeg == it->getPower()) {
+							*it = *it + m;
 						}
 						else {
-							for (List<Monom>::iterator it = polynom.begin(); it != polynom.end(); ++it) {
-								if ((stod(strDeg)) > (it->getPower())) {
-									polynom.insert(Monom(stod(strCoef), stod(strDeg)), it.getNode());
-									break;
-								}
-								/*else if((it++) == polynom.end()) {
-									polynom.insert(Monom(stod(strCoef), stod(strDeg)), it);
-									break;
-								}*/
-								else if(((it++)++) == polynom.end()) {
-									polynom.insert(Monom(stod(strCoef), stod(strDeg)), it.getNode());
-									break;
-								}
+							List<Monom>::iterator prev(nullptr);
+							while (it != polynom.end() && newDeg >= it->getPower()) {
+								prev = it;
+								++it;
+							}
+
+							if (prev != List<Monom>::iterator(nullptr)) {
+								polynom.insert(Monom(newCoef, newDeg), prev.getNode());
 							}
 						}
-						
-						//polynom.insert_front(Monom(stod(strCoef), stod(strDeg)));
+
 					}
 					else {
 						ka = State::ERROR;
@@ -269,16 +311,19 @@ public:
 	}
 
 	Polynom operator+(Polynom other) {
-		//List<Monom> result;
 
 		Polynom result;
-
 
 		List<Monom>::iterator it = result.polynom.begin();
 		List<Monom>::iterator it1 = polynom.begin();
 		List<Monom>::iterator it2 = other.polynom.begin();
 		while ((it1 != polynom.end()) || (it2 != other.polynom.end())) {
 			if ((it1 != polynom.end()) && (it2 == other.polynom.end())) {
+				if (result.polynom.begin() == result.polynom.end()) {
+					it = List<Monom>::iterator(result.polynom.insert_front(Monom(it1->getCoef(), it1->getPower())));
+					//it++;
+					it1++;
+				}
 				while (it1 != polynom.end()) {
 					result.polynom.insert(Monom(it1->getCoef(), it1->getPower()), it.getNode());
 					it++;
@@ -286,6 +331,11 @@ public:
 				}
 			}
 			else if ((it1 == polynom.end()) && (it2 != other.polynom.end())) {
+				if (result.polynom.begin() == result.polynom.end()) {
+					it = List<Monom>::iterator(result.polynom.insert_front(Monom(it2->getCoef(), it2->getPower())));
+					//it++;
+					it2++;
+				}
 				while (it2 != polynom.end()) {
 					result.polynom.insert(Monom(it2->getCoef(), it2->getPower()), it.getNode());
 					it++;
@@ -334,17 +384,45 @@ public:
 					}
 				}
 			}
-			
+		}
+		return result;
+	}
 
+	Polynom operator-(Polynom other) {
 
+		Polynom result;
 
-
-
-				/*if (it1->getPower() == it2->getPower()) {
-					double resCoef = it1->getCoef() + it2->getCoef();
+		List<Monom>::iterator it = result.polynom.begin();
+		List<Monom>::iterator it1 = polynom.begin();
+		List<Monom>::iterator it2 = other.polynom.begin();
+		while ((it1 != polynom.end()) || (it2 != other.polynom.end())) {
+			if ((it1 != polynom.end()) && (it2 == other.polynom.end())) {
+				if (result.polynom.begin() == result.polynom.end()) {
+					it = List<Monom>::iterator(result.polynom.insert_front(Monom(it1->getCoef(), it1->getPower())));
+					it1++;
+				}
+				while (it1 != polynom.end()) {
+					result.polynom.insert(Monom(it1->getCoef(), it1->getPower()), it.getNode());
+					it++;
+					it1++;
+				}
+			}
+			else if ((it1 == polynom.end()) && (it2 != other.polynom.end())) {
+				if (result.polynom.begin() == result.polynom.end()) {
+					it = List<Monom>::iterator(result.polynom.insert_front(Monom(-(it2->getCoef()), it2->getPower())));
+					it2++;
+				}
+				while (it2 != polynom.end()) {
+					result.polynom.insert(Monom(-(it2->getCoef()), it2->getPower()), it.getNode());
+					it++;
+					it2++;
+				}
+			}
+			else {
+				if (it1->getPower() == it2->getPower()) {
+					double resCoef = it1->getCoef() - it2->getCoef();
 					if (result.polynom.begin() == result.polynom.end()) {
-						result.polynom.insert_front(Monom(resCoef, it1->getPower()));
-						it++;
+						it = List<Monom>::iterator(result.polynom.insert_front(Monom(resCoef, it1->getPower())));
 						it1++;
 						it2++;
 					}
@@ -354,13 +432,11 @@ public:
 						it2++;
 						it++;
 					}
-
 				}
 				else if (it1->getPower() < it2->getPower()) {
 					if (result.polynom.begin() == result.polynom.end()) {
-						result.polynom.insert_front(Monom(it1->getCoef(), it1->getPower()));
+						it = List<Monom>::iterator(result.polynom.insert_front(Monom(it1->getCoef(), it1->getPower())));
 						it1++;
-						it++;
 					}
 					else {
 						result.polynom.insert(Monom(it1->getCoef(), it1->getPower()), it.getNode());
@@ -370,18 +446,45 @@ public:
 				}
 				else {
 					if (result.polynom.begin() == result.polynom.end()) {
-						result.polynom.insert_front(Monom(it2->getCoef(), it2->getPower()));
+						it = List<Monom>::iterator(result.polynom.insert_front(Monom(-(it2->getCoef()), it2->getPower())));
 						it2++;
-						it++;
 					}
 					else {
-						result.polynom.insert(Monom(it2->getCoef(), it2->getPower()), it.getNode());
+						result.polynom.insert(Monom(-(it2->getCoef()), it2->getPower()), it.getNode());
 						it2++;
 						it++;
 					}
-				}*/
+				}
 			}
-			return result;
+		}
+		return result;
+	}
+
+	Polynom operator*(Monom monom) {
+		Polynom result;
+		List<Monom>::iterator it = result.polynom.begin();
+		for (List<Monom>::iterator it1 = polynom.begin(); it1 != polynom.end(); ++it1) {
+			if (result.polynom.begin() == result.polynom.end()) {
+				it = List<Monom>::iterator(result.polynom.insert_front(Monom(it1->getCoef() * monom.getCoef(), it1->getPower() + monom.getPower())));
+			}
+			else {
+				result.polynom.insert(Monom(it1->getCoef() * monom.getCoef(), it1->getPower() + monom.getPower()), it.getNode());
+			}
+		}
+		return result;
+	}
+
+	Polynom operator*(Polynom other) {
+
+		Polynom result;
+		//this other result
+		/*List<Monom>::iterator it = result.polynom.begin();
+		List<Monom>::iterator it1 = polynom.begin();
+		List<Monom>::iterator it2 = other.polynom.begin();*/
+		for (int i = 0; i < other.polynom.size(); i++) {
+			result = result + (*this * other[i]);
+		}
+		return result;
 	}
 };
 
