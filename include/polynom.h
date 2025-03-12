@@ -26,8 +26,10 @@ enum class State {
 };
 
 class Monom {
+
 	double coef;
-	double power;
+	int power;
+
 public:
 
 	Monom() {
@@ -35,8 +37,7 @@ public:
 		power = 0;
 	}
 
-
-	Monom(double coef1, double power1) {
+	Monom(double coef1, int power1) {
 		this->coef = coef1;
 		this->power = power1;
 	}
@@ -45,10 +46,22 @@ public:
 		return coef;
 	}
 
-	double getPower() {
+	int getPower() {
 		return power;
 	}
+
+	int getPowerX() {
+		return power / 100;
+	}
 	
+	int getPowerY() {
+		return (power / 10) % 10;
+	}
+	
+	int getPowerZ() {
+		return power % 10;
+	}
+
 	Monom operator+(Monom m) {
 		if (this->getPower() != m.getPower()) {
 			throw "different degrees";
@@ -57,7 +70,9 @@ public:
 	}
 
 	Monom& operator+=(const Monom& m) {
-		if (power != m.power) throw std::exception("Degree are different");
+		if (this->power != m.power) {
+			throw "Degree are different";
+		}
 		coef += m.coef;
 		return *this;
 	}
@@ -321,7 +336,6 @@ public:
 			if ((it1 != polynom.end()) && (it2 == other.polynom.end())) {
 				if (result.polynom.begin() == result.polynom.end()) {
 					it = List<Monom>::iterator(result.polynom.insert_front(Monom(it1->getCoef(), it1->getPower())));
-					//it++;
 					it1++;
 				}
 				while (it1 != polynom.end()) {
@@ -333,7 +347,6 @@ public:
 			else if ((it1 == polynom.end()) && (it2 != other.polynom.end())) {
 				if (result.polynom.begin() == result.polynom.end()) {
 					it = List<Monom>::iterator(result.polynom.insert_front(Monom(it2->getCoef(), it2->getPower())));
-					//it++;
 					it2++;
 				}
 				while (it2 != polynom.end()) {
@@ -347,7 +360,6 @@ public:
 					double resCoef = it1->getCoef() + it2->getCoef();
 					if (result.polynom.begin() == result.polynom.end()) {
 						it = List<Monom>::iterator(result.polynom.insert_front(Monom(resCoef, it1->getPower())));
-						//it++;
 						it1++;
 						it2++;
 					}
@@ -363,7 +375,6 @@ public:
 					if (result.polynom.begin() == result.polynom.end()) {
 						 it = List<Monom>::iterator(result.polynom.insert_front(Monom(it1->getCoef(), it1->getPower())));
 						it1++;
-						//it++;
 					}
 					else {
 						result.polynom.insert(Monom(it1->getCoef(), it1->getPower()), it.getNode());
@@ -375,7 +386,6 @@ public:
 					if (result.polynom.begin() == result.polynom.end()) {
 						it = List<Monom>::iterator(result.polynom.insert_front(Monom(it2->getCoef(), it2->getPower())));
 						it2++;
-						//it++;
 					}
 					else {
 						result.polynom.insert(Monom(it2->getCoef(), it2->getPower()), it.getNode());
@@ -464,6 +474,13 @@ public:
 		Polynom result;
 		List<Monom>::iterator it = result.polynom.begin();
 		for (List<Monom>::iterator it1 = polynom.begin(); it1 != polynom.end(); ++it1) {
+
+			if (it1->getPowerX() + monom.getPowerX() > 9 ||
+				it1->getPowerY() + monom.getPowerY() > 9 ||
+				it1->getPowerZ() + monom.getPowerZ() > 9) {
+				throw "Degree cant exceed 9";
+			}
+
 			if (result.polynom.begin() == result.polynom.end()) {
 				it = List<Monom>::iterator(result.polynom.insert_front(Monom(it1->getCoef() * monom.getCoef(), it1->getPower() + monom.getPower())));
 			}
@@ -475,12 +492,11 @@ public:
 	}
 
 	Polynom operator*(Polynom other) {
-
 		Polynom result;
-		//this other result
-		/*List<Monom>::iterator it = result.polynom.begin();
-		List<Monom>::iterator it1 = polynom.begin();
-		List<Monom>::iterator it2 = other.polynom.begin();*/
+		if (this->polynom.size() == 0 || other.polynom.size() == 0) {
+			result.insert(0, 0);
+			return result;
+		}
 		for (int i = 0; i < other.polynom.size(); i++) {
 			result = result + (*this * other[i]);
 		}
